@@ -1,0 +1,128 @@
+name: Release Lectern
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    env:
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Verify tag matches package version
+        shell: pwsh
+        run: |
+          $packageVersion = node -p "require('./package.json').version"
+          if ("v$packageVersion" -ne "${{ github.ref_name }}") {
+            throw "Tag ${{ github.ref_name }} does not match package version v$packageVersion."
+          }
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Build release artifacts
+        run: npm run build
+        env:
+          CSC_LINK: ${{ secrets.WINDOWS_CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.WINDOWS_CSC_KEY_PASSWORD }}
+
+      - name: Verify release artifacts
+        shell: pwsh
+        run: |
+          $version = node -p "require('./package.json').version"
+          $requiredFiles = @(
+            "dist/Lectern-Setup-$version.exe",
+            "dist/Lectern-Setup-$version.exe.blockmap",
+            "dist/latest.yml"
+          )
+          foreach ($file in $requiredFiles) {
+            if (-not (Test-Path -LiteralPath $file)) {
+              throw "Required release artifact is missing: $file"
+            }
+          }
+
+      - name: Create draft release
+        id: release_state
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $releases = gh release list `
+            --repo $env:GITHUB_REPOSITORY `
+            --limit 100 `
+            --json tagName,isDraft | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw "Unable to inspect existing releases." }
+          $existingRelease = $releases | Where-Object { $_.tagName -eq $tag } | Select-Object -First 1
+          if ($null -ne $existingRelease) {
+            if (-not $existingRelease.isDraft) {
+              $version = node -p "require('./package.json').version"
+              $assetNames = gh release view $tag `
+                --repo $env:GITHUB_REPOSITORY `
+                --json assets `
+                --jq '.assets[].name'
+              if ($LASTEXITCODE -ne 0) { throw "Unable to inspect assets for release $tag." }
+              $requiredAssets = @(
+                "Lectern-Setup-$version.exe",
+                "latest.yml"
+              )
+              $missingAssets = $requiredAssets | Where-Object { $_ -notin $assetNames }
+              if ($missingAssets.Count -gt 0) {
+                throw "Published release $tag is incomplete. Missing: $($missingAssets -join ', '). Use a higher version."
+              }
+              "already_published=true" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+              Write-Host "Release $tag is already published with the required updater assets."
+              exit 0
+            }
+            Write-Host "Reusing existing draft release $tag."
+          } else {
+            $version = node -p "require('./package.json').version"
+            gh release create $tag `
+              --repo $env:GITHUB_REPOSITORY `
+              --draft `
+              --title "Lectern $version" `
+              --generate-notes
+            if ($LASTEXITCODE -ne 0) { throw "Unable to create draft release $tag." }
+          }
+          "already_published=false" | Out-File -FilePath $env:GITHUB_OUTPUT -Encoding utf8 -Append
+
+      - name: Upload release artifacts
+        if: steps.release_state.outputs.already_published != 'true'
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          $version = node -p "require('./package.json').version"
+          gh release upload $tag `
+            "dist/Lectern-Setup-$version.exe" `
+            "dist/Lectern-Setup-$version.exe.blockmap" `
+            "dist/latest.yml" `
+            --repo $env:GITHUB_REPOSITORY `
+            --clobber
+          if ($LASTEXITCODE -ne 0) { throw "Unable to upload all release artifacts." }
+
+      - name: Publish release
+        if: steps.release_state.outputs.already_published != 'true'
+        shell: pwsh
+        run: |
+          $tag = "${{ github.ref_name }}"
+          gh release edit $tag `
+            --repo $env:GITHUB_REPOSITORY `
+            --draft=false `
+            --latest
+          if ($LASTEXITCODE -ne 0) { throw "Unable to publish release $tag." }

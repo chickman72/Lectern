@@ -1,0 +1,57 @@
+{
+  "name": "lectern",
+  "version": "0.1.0",
+  "description": "A webcam-side teleprompter for recorded lectures on Windows.",
+  "author": "Chris Hickman",
+  "license": "MIT",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "test": "node --test",
+    "build": "electron-builder --win nsis --publish never",
+    "smoke": "electron . --smoke-test"
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
+  },
+  "devDependencies": {
+    "electron": "^45.2.3",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.chrishickman.lectern",
+    "productName": "Lectern",
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "dist"
+    },
+    "artifactName": "${productName}-Setup-${version}.${ext}",
+    "win": {
+      "icon": "assets/lectern.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "chickman72",
+      "repo": "Lectern",
+      "releaseType": "release"
+    }
+  }
+}
