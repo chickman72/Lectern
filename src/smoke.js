@@ -18,6 +18,14 @@ async function run({ app, editor, prompter, snapshot, command }) {
     await wait(500); prompter.show();
     assert.equal(await prompter.webContents.executeJavaScript("document.querySelectorAll('#text p.heading').length"), 1);
     result.checks.push('Script and headings synchronize between windows');
+    const layout = await prompter.webContents.executeJavaScript(`({
+      firstLineTop: document.querySelector('#text p').getBoundingClientRect().top,
+      controlsTop: document.querySelector('header').getBoundingClientRect().top,
+      readingBottom: document.getElementById('viewport').getBoundingClientRect().bottom
+    })`);
+    assert.ok(layout.firstLineTop <= 3, `First line should start at webcam edge, got ${layout.firstLineTop}px`);
+    assert.ok(layout.controlsTop >= layout.readingBottom, 'Window controls should sit below the reading area');
+    result.checks.push('Reading starts at the top edge with controls below the script');
     command('toggle'); await wait(1400);
     const position = await prompter.webContents.executeJavaScript("document.getElementById('viewport').scrollTop");
     assert.ok(position > 25, `Expected scrolling, got ${position}`);

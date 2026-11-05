@@ -29,7 +29,8 @@ $remote = git remote get-url origin
 if ($remote -ne $repository.clone_url) { throw 'Unexpected origin remote; refusing to publish.' }
 git push -u origin main
 if ($LASTEXITCODE -ne 0) { throw 'Could not push the application.' }
-git push origin v0.1.0
+$version = (Get-Content -Raw -LiteralPath 'package.json' | ConvertFrom-Json).version
+git push origin "v$version"
 if ($LASTEXITCODE -ne 0) { throw 'Could not push the release tag.' }
 Write-Output $repository.html_url
 $headers.Clear()

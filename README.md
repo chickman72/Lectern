@@ -4,7 +4,7 @@ A local Windows desktop teleprompter for recording lectures. Built with the same
 
 ## Use
 
-Open a Markdown or text script, or type directly into the editor. Select your webcam's monitor, keep **Dock at top** enabled, and use camera offset to align the text beneath the lens. Open the prompter and press Play. Undock to drag or resize the panel. Scripts and reading position are saved on this computer in `%APPDATA%/lectern/lecture.json`; Export creates a separate Markdown copy.
+Open a Markdown or text script, or type directly into the editor. Select your webcam's monitor, keep **Dock at top** enabled, and use camera offset to align the text beneath the lens. The script starts at the top edge of the prompter, with the timer and controls below the reading area to keep your eyes near the webcam. Open the prompter and press Play. Undock and drag the bottom status bar to move the panel. Scripts and reading position are saved on this computer in `%APPDATA%/lectern/lecture.json`; Export creates a separate Markdown copy.
 
 Global controls work while another application has focus:
 
@@ -31,7 +31,7 @@ npm run smoke
 npm run build
 ```
 
-The smoke check runs the real Electron windows with temporary application data, exercises playback and synchronization, and writes `smoke-result.json` and screenshots. The installer is `dist/Lectern-Setup-0.1.0.exe`.
+The smoke check runs the real Electron windows with temporary application data, exercises playback and synchronization, and writes `smoke-result.json` and screenshots. The installer is `dist/Lectern-Setup-0.1.1.exe`.
 
 ## GitHub releases and updates
 

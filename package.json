@@ -1,6 +1,6 @@
 {
   "name": "lectern",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A webcam-side teleprompter for recorded lectures on Windows.",
   "author": "Chris Hickman",
   "license": "MIT",

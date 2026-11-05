@@ -34,7 +34,7 @@ function command(value) {
     controls(); report();
   }
   if (value === 'restart') { pause(); viewport.scrollTop = 0; elapsed = 0; report(); }
-  if (value === 'back' || value === 'forward') { pause(); viewport.scrollTop += (value === 'back' ? -1 : 1) * settings.fontSize * 1.55 * 3; report(); }
+  if (value === 'back' || value === 'forward') { pause(); viewport.scrollTop += (value === 'back' ? -1 : 1) * parseFloat(getComputedStyle($('text')).lineHeight) * 3; report(); }
   if (value === 'faster' || value === 'slower') lectern.save({ speed: Math.min(150, Math.max(5, settings.speed + (value === 'faster' ? 5 : -5))) });
   if (Number.isInteger(value?.section)) { pause(); const p = $('text').querySelector(`[data-index="${value.section}"]`); if (p) viewport.scrollTop += p.getBoundingClientRect().top - viewport.getBoundingClientRect().top; report(); }
 }
